@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from database import get_db
 from models.user import User
 from models.education import EducationDetails
+from models.preferred_job import PreferredJob
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
 
@@ -23,9 +24,12 @@ def view_all_users(db: Session = Depends(get_db)):
 def view_user_profile(user_id: int, db: Session = Depends(get_db)):
     
     education = db.query(EducationDetails).filter(EducationDetails.user_id == user_id).first()
+    preferred_job = db.query(PreferredJob).filter(PreferredJob.user_id == user_id).first()
+
     
     return {
         "education_details": education,
+        "preferred_job_details": preferred_job
     }
 
 @router.delete("/delete-user/{user_id}")
