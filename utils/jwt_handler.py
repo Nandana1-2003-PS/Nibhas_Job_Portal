@@ -1,4 +1,3 @@
-# utils/jwt_handler.py
 from datetime import datetime, timedelta
 from jose import JWTError, jwt
 from fastapi import HTTPException, Depends
@@ -8,8 +7,8 @@ SECRET_KEY = "your_secret_key_here"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
 
-# Use HTTPBearer so Swagger shows a single "Value" field for the token
-security = HTTPBearer()  # <- replaces OAuth2PasswordBearer
+
+security = HTTPBearer() 
 
 def create_access_token(data: dict):
     to_encode = data.copy()
