@@ -6,7 +6,7 @@ from models.user import User
 from schemas.preferred_schemas import PreferredJobCreate, PreferredJobResponse, PreferredJobUpdate
 from typing import List
 from utils.jwt_handler import get_current_user
-  # ✅ Import your JWT handler
+
 
 router = APIRouter(prefix="/preferred-jobs", tags=["Preferred Jobs"])
 
