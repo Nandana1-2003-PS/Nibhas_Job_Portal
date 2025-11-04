@@ -3,6 +3,8 @@ from sqlalchemy.orm import Session
 from database import get_db
 from models.user import User
 from models.education import EducationDetails
+from typing import List
+from schemas.education_schema import EducationResponse
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
 
@@ -19,14 +21,19 @@ def admin_login(username: str, password: str):
 def view_all_users(db: Session = Depends(get_db)):
     return db.query(User).all()
 
-@router.get("/view-profile/{user_id}")
+# @router.get("/view-profile/{user_id}")
+# def view_user_profile(user_id: int, db: Session = Depends(get_db)):
+    
+#     education = db.query(EducationDetails).filter(EducationDetails.user_id == user_id).first()
+    
+#     return {
+#         "education_details": education,
+#     }
+
+@router.get("/view-profile/{user_id}", response_model=List[EducationResponse])
 def view_user_profile(user_id: int, db: Session = Depends(get_db)):
-    
-    education = db.query(EducationDetails).filter(EducationDetails.user_id == user_id).first()
-    
-    return {
-        "education_details": education,
-    }
+    educations = db.query(EducationDetails).filter(EducationDetails.user_id == user_id).all()
+    return educations
 
 @router.delete("/delete-user/{user_id}")
 def delete_user(user_id: int, db: Session = Depends(get_db)):
