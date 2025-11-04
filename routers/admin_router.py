@@ -2,9 +2,11 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from database import get_db
 from models.user import User
+from models.personal_details import PersonalDetails
 from models.education import EducationDetails
 from typing import List
 from schemas.education_schema import EducationResponse
+from models.preferred_job import PreferredJob
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
 
@@ -34,6 +36,14 @@ def view_all_users(db: Session = Depends(get_db)):
 def view_user_profile(user_id: int, db: Session = Depends(get_db)):
     educations = db.query(EducationDetails).filter(EducationDetails.user_id == user_id).all()
     return educations
+    personal_details = db.query(PersonalDetails).filter(PersonalDetails.user_id == user_id).first()
+    education = db.query(EducationDetails).filter(EducationDetails.user_id == user_id).first()
+    preferred_job = db.query(PreferredJob).filter(PreferredJob.user_id == user_id).first()
+    return {
+        "personal_details": personal_details,
+        "education_details": education,
+        "preferred_job": preferred_job
+    }
 
 @router.delete("/delete-user/{user_id}")
 def delete_user(user_id: int, db: Session = Depends(get_db)):

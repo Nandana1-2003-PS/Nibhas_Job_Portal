@@ -2,11 +2,18 @@
 
 #git code for merge and push
 
+type this before start project 
+
 - git checkout main
 - git pull
 - git branch
-- git branch ashik-1
-- git checkout ashik-1
+if(not created branch){
+- git branch branch_name
+}
+- git checkout branch_name
+
+now make changes in your code then apply this
+
 - git add .
 - git commit -m "user manage updated"
 - git fetch origin main
