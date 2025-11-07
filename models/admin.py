@@ -1,5 +1,6 @@
 from sqlalchemy import Column, Integer, String
 from database import Base
+from sqlalchemy.orm import relationship
 
 class Admin(Base):
     __tablename__ = "admins"
@@ -7,3 +8,5 @@ class Admin(Base):
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String, unique=True, nullable=False)
     password_hash = Column(String, nullable=False)
+
+    job_posts = relationship("JobPost", back_populates="admin")

@@ -44,3 +44,19 @@ def admin_only(credentials: HTTPAuthorizationCredentials = Depends(security)):
 
     except JWTError:
         raise HTTPException(status_code=401, detail="Invalid or expired token")
+    
+def employer_only(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """
+    Restrict route access to employer accounts only
+    """
+    token = credentials.credentials
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+
+        if payload.get("role") != "employer":
+            raise HTTPException(status_code=403, detail="Employers only")
+
+        return payload.get("sub")
+
+    except JWTError:
+        raise HTTPException(status_code=401, detail="Invalid or expired token")

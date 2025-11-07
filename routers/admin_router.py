@@ -6,8 +6,11 @@ from models.personal_details import PersonalDetails
 from models.education import EducationDetails
 from models.preferred_job import PreferredJob
 from models.admin import Admin
+from models.job_post import JobPost
 from utils.hashing import verify_password
 from utils.jwt_handler import create_access_token, admin_only
+from schemas.job_post_schema import JobPostCreate,JobPostResponse
+
 router = APIRouter(prefix="/admin", tags=["Admin"])
 @router.post("/login")
 def admin_login(username: str, password: str, db: Session = Depends(get_db)):
@@ -62,3 +65,28 @@ def delete_user(
     db.commit()
 
     return {"message": "User deleted successfully"}
+
+# -------------------------------
+# 🔹 Post a Job (By Admin)
+# -------------------------------
+@router.post("/post-job", response_model=JobPostResponse)
+def post_job(job: JobPostCreate, db: Session = Depends(get_db)):
+    """
+    Admin can create a new job post.
+    (Later you can connect admin authentication and use admin_id dynamically)
+    """
+    admin_id = 1  # Example static ID, replace with real admin_id from token/session
+
+    db_job = JobPost(
+        title=job.title,
+        description=job.description,
+        location=job.location,
+        salary=job.salary,
+        job_type=job.job_type,
+        admin_id=admin_id
+    )
+    db.add(db_job)
+    db.commit()
+    db.refresh(db_job)
+
+    return db_job
