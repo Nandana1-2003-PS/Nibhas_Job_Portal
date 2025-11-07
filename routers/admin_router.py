@@ -124,3 +124,59 @@ def view_all_jobs_detailed(
         })
 
     return jobs
+
+
+@router.post("/jobs", response_model=JobPostResponse)
+def create_job_post(job: JobPostCreate, db: Session = Depends(get_db), _: str = Depends(admin_only)):
+    new_job = JobPost(
+        title=job.title,
+        description=job.description,
+        salary=job.salary,
+        job_type=job.job_type,
+        vacancies=job.vacancies,
+        location=job.location
+    )
+    db.add(new_job)
+    db.commit()
+    db.refresh(new_job)
+    return new_job
+
+
+
+@router.get("/jobs", response_model=list[JobPostResponse])
+def view_all_jobs(db: Session = Depends(get_db), _: str = Depends(admin_only)):
+    jobs = db.query(JobPost).all()
+    return jobs
+
+
+@router.put("/jobs/{job_id}", response_model=JobPostResponse)
+def edit_job_post(job_id: int, job_data: JobPostCreate, db: Session = Depends(get_db), _: str = Depends(admin_only)):
+    job = db.query(JobPost).filter(JobPost.id == job_id).first()
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    job.title = job_data.title
+    job.description = job_data.description
+    job.salary = job_data.salary
+    job.job_type = job_data.job_type
+    job.vacancies = job_data.vacancies
+    job.location = job_data.location
+
+    db.commit()
+    db.refresh(job)
+    return job
+
+
+
+@router.delete("/jobs/{job_id}")
+def delete_job_post(job_id: int, db: Session = Depends(get_db), _: str = Depends(admin_only)):
+    job = db.query(JobPost).filter(JobPost.id == job_id).first()
+
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    db.delete(job)
+    db.commit()
+
+    return {"message": "Job post deleted successfully"}
+
