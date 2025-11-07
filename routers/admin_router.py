@@ -6,10 +6,14 @@ from models.personal_details import PersonalDetails
 from models.education import EducationDetails
 from models.preferred_job import PreferredJob
 from models.admin import Admin
+from models.employer import Employer
 from models.job_post import JobPost
+from models.employer_job import EmployerJob
+from schemas.job_post_schema import JobPostResponse,JobPostCreate
 from utils.hashing import verify_password
 from utils.jwt_handler import create_access_token, admin_only
-from schemas.job_post_schema import JobPostCreate,JobPostResponse
+
+
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
 @router.post("/login")
@@ -66,6 +70,63 @@ def delete_user(
 
     return {"message": "User deleted successfully"}
 
+@router.get("/view-Employers")
+def view_all_employers(
+    db: Session = Depends(get_db),
+    _: str = Depends(admin_only)
+):
+    return db.query(Employer).all()
+
+@router.get("/view-employer-job/{employer_id}")
+def view_employer_job(
+    employer_id: int,
+    db: Session = Depends(get_db),
+    _: str = Depends(admin_only)
+):
+    
+
+    Jobs = db.query(EmployerJob).filter(
+        EmployerJob.employer_id == employer_id).all()
+
+    return {
+        "Jobs": Jobs
+       
+    }
+from models.employer_job import EmployerJob
+from models.employer import Employer
+
+@router.get("/view-all-jobs-detailed")
+def view_all_jobs_detailed(
+    db: Session = Depends(get_db),
+    _: str = Depends(admin_only)
+):
+    results = db.query(
+        EmployerJob.id.label("job_id"),
+        EmployerJob.title,
+        EmployerJob.description,
+        EmployerJob.location,
+        EmployerJob.salary,
+        EmployerJob.job_type,
+        Employer.id.label("employer_id"),
+        Employer.company_name
+    ).join(
+        Employer, EmployerJob.employer_id == Employer.id
+    ).all()
+
+    jobs = []
+    for r in results:
+        jobs.append({
+            "job_id": r.job_id,
+            "title": r.title,
+            "description": r.description,
+            "location": r.location,
+            "salary": r.salary,
+            "job_type": r.job_type,
+            "employer_id": r.employer_id,
+            "company_name": r.company_name
+        })
+
+    return jobs
 
 
 @router.post("/jobs", response_model=JobPostResponse)
@@ -121,3 +182,4 @@ def delete_job_post(job_id: int, db: Session = Depends(get_db), _: str = Depends
     db.commit()
 
     return {"message": "Job post deleted successfully"}
+
