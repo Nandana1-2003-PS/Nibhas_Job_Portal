@@ -5,6 +5,11 @@ from models.user import User
 from schemas.user_schema import UserCreate, UserLogin, UserResponse
 from utils.hashing import hash_password, verify_password
 from utils.jwt_handler import create_access_token, get_current_user
+from models.job_post import JobPost
+from schemas.job_post_schema import JobPostResponse
+from typing import List
+
+
 router = APIRouter(prefix="/users", tags=["Users"])
 @router.post("/register", response_model=UserResponse)
 def register_user(user: UserCreate, db: Session = Depends(get_db)):
@@ -44,3 +49,9 @@ def get_current_user_profile(
 ):
     user = db.query(User).filter(User.username == current_username).first()
     return user
+
+
+@router.get("/jobs", response_model=List[JobPostResponse])
+def view_jobs(db: Session = Depends(get_db)):
+    jobs = db.query(JobPost).order_by(JobPost.created_at.desc()).all()
+    return jobs

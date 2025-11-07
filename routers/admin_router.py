@@ -66,27 +66,58 @@ def delete_user(
 
     return {"message": "User deleted successfully"}
 
-# -------------------------------
-# 🔹 Post a Job (By Admin)
-# -------------------------------
-@router.post("/post-job", response_model=JobPostResponse)
-def post_job(job: JobPostCreate, db: Session = Depends(get_db)):
-    """
-    Admin can create a new job post.
-    (Later you can connect admin authentication and use admin_id dynamically)
-    """
-    admin_id = 1  # Example static ID, replace with real admin_id from token/session
 
-    db_job = JobPost(
+
+@router.post("/jobs", response_model=JobPostResponse)
+def create_job_post(job: JobPostCreate, db: Session = Depends(get_db), _: str = Depends(admin_only)):
+    new_job = JobPost(
         title=job.title,
         description=job.description,
-        location=job.location,
         salary=job.salary,
         job_type=job.job_type,
-        admin_id=admin_id
+        vacancies=job.vacancies,
+        location=job.location
     )
-    db.add(db_job)
+    db.add(new_job)
     db.commit()
-    db.refresh(db_job)
+    db.refresh(new_job)
+    return new_job
 
-    return db_job
+
+
+@router.get("/jobs", response_model=list[JobPostResponse])
+def view_all_jobs(db: Session = Depends(get_db), _: str = Depends(admin_only)):
+    jobs = db.query(JobPost).all()
+    return jobs
+
+
+@router.put("/jobs/{job_id}", response_model=JobPostResponse)
+def edit_job_post(job_id: int, job_data: JobPostCreate, db: Session = Depends(get_db), _: str = Depends(admin_only)):
+    job = db.query(JobPost).filter(JobPost.id == job_id).first()
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    job.title = job_data.title
+    job.description = job_data.description
+    job.salary = job_data.salary
+    job.job_type = job_data.job_type
+    job.vacancies = job_data.vacancies
+    job.location = job_data.location
+
+    db.commit()
+    db.refresh(job)
+    return job
+
+
+
+@router.delete("/jobs/{job_id}")
+def delete_job_post(job_id: int, db: Session = Depends(get_db), _: str = Depends(admin_only)):
+    job = db.query(JobPost).filter(JobPost.id == job_id).first()
+
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    db.delete(job)
+    db.commit()
+
+    return {"message": "Job post deleted successfully"}
