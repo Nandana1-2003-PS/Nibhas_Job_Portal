@@ -7,9 +7,12 @@ from models.education import EducationDetails
 from models.preferred_job import PreferredJob
 from models.admin import Admin
 from models.employer import Employer
+from models.job_post import JobPost
 from models.employer_job import EmployerJob
+from schemas.job_post_schema import JobPostResponse,JobPostCreate
 from utils.hashing import verify_password
 from utils.jwt_handler import create_access_token, admin_only
+
 
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
