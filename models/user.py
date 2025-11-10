@@ -1,6 +1,7 @@
 from sqlalchemy import Column, Integer, String
 from sqlalchemy.orm import relationship
 from database import Base
+from models.user_skill import user_skill
 
 
 
@@ -11,3 +12,4 @@ class User(Base):
     email = Column(String, unique=True, nullable=False)
     hashed_password = Column(String(200), nullable=False)
     educations = relationship("EducationDetails", back_populates="user")
+    skills = relationship("Skill", secondary=user_skill, backref="users")

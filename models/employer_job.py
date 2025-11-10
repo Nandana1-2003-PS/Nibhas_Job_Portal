@@ -10,4 +10,5 @@ class EmployerJob(Base):
     location = Column(String, nullable=False)
     salary = Column(String)
     job_type = Column(String)
+    vaccancy=Column(Integer)
     employer_id = Column(Integer, ForeignKey("employers.id"))
