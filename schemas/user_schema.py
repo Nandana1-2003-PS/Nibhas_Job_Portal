@@ -20,3 +20,12 @@ class UserResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class AdminUserCreate(BaseModel):
+    username: str
+    email: str
+    password: str = Field(..., max_length=72)
+    
+    class Config:
+        from_attributes = True        
