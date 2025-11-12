@@ -9,15 +9,17 @@ from models.admin import Admin
 from models.employer import Employer
 from models.job_post import JobPost
 from models.employer_job import EmployerJob
+from models.skill import Skill
+from models.user_skill import user_skill
 from schemas.job_post_schema import JobPostResponse,JobPostCreate
-from utils.hashing import verify_password
+from utils.hashing import verify_password, hash_password
 from utils.jwt_handler import create_access_token, admin_only
 from schemas.job_post_schema import JobPostCreate,JobPostResponse
 from schemas.skill_schema import SkillBase, SkillCreate
-from sqlalchemy import or_
-from models.skill import Skill
 from models.notification import Notification
-from schemas.notification_schema import NotificationResponse
+from schemas.notification_schema import NotificationResponse    
+from schemas.user_schema import AdminUserCreate, UserResponse
+from sqlalchemy import or_
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
 @router.post("/login")
@@ -29,6 +31,7 @@ def admin_login(username: str, password: str, db: Session = Depends(get_db)):
 
     token = create_access_token({"sub": admin.username, "role": "admin"})
     return {"access_token": token, "token_type": "bearer"}
+
 
 @router.get("/view-jobseekers")
 def view_all_users(
@@ -51,11 +54,19 @@ def view_user_profile(
 
     preferred_job = db.query(PreferredJob).filter(
         PreferredJob.user_id == user_id).first()
+    
+    user_skills = (
+        db.query(Skill)
+        .join(user_skill, Skill.id == user_skill.c.skill_id)
+        .filter(user_skill.c.user_id == user_id)
+        .all()
+    )
 
     return {
         "personal_details": personal_details,
         "education_details": education,
-        "preferred_job": preferred_job
+        "preferred_job": preferred_job,
+        "skills":user_skills
     }
 
 @router.delete("/delete-user/{user_id}")
@@ -252,7 +263,7 @@ def delete_job_post(job_id: int, db: Session = Depends(get_db), _: str = Depends
 
     return db_job
 
-# Add to admin_router.py
+
 from models.skill import Skill
 from schemas.skill_schema import SkillBase, SkillCreate
 
@@ -263,7 +274,7 @@ def create_skill(
     _: str = Depends(admin_only)
 ):
     """Admin creates a new skill"""
-    # Check if skill already exists
+    
     existing_skill = db.query(Skill).filter(Skill.name == skill_data.name).first()
     if existing_skill:
         raise HTTPException(status_code=400, detail="Skill already exists")
@@ -296,3 +307,39 @@ def delete_skill(
     db.delete(skill)
     db.commit()
     return {"message": "Skill deleted successfully"}
+
+
+@router.post("/register-user", response_model=UserResponse)
+def admin_register_user(
+    user_data: AdminUserCreate,
+    db: Session = Depends(get_db),
+    _: str = Depends(admin_only)
+):
+    """
+    Admin endpoint to register new users
+    """
+    # Check if username already exists
+    existing_user = db.query(User).filter(User.username == user_data.username).first()
+    if existing_user:
+        raise HTTPException(status_code=400, detail="Username already taken")
+
+    # Check if email already exists
+    existing_email = db.query(User).filter(User.email == user_data.email).first()
+    if existing_email:
+        raise HTTPException(status_code=400, detail="Email already used")
+
+    # Hash the password
+    hashed_pwd = hash_password(user_data.password)
+
+    # Create new user
+    new_user = User(
+        username=user_data.username,
+        email=user_data.email,
+        hashed_password=hashed_pwd
+    )
+    
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+    
+    return new_user

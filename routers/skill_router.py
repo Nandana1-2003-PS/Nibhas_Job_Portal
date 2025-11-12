@@ -28,27 +28,97 @@ def get_my_skills(
     user.skills  # This triggers lazy loading
     return user
 
-@router.post("/my-skills", response_model=UserSkillsResponse)
-def update_my_skills(
+@router.post("/my-skills/add", response_model=UserSkillsResponse)
+def add_skills(
     skills_data: UserSkillsUpdate,
     db: Session = Depends(get_db),
     current_username: str = Depends(get_current_user)
 ):
-    """Update user's skills (replace existing ones)"""
+    """Add skills to user's existing skills (without removing current ones)"""
     user = db.query(User).filter(User.username == current_username).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     
-    # Clear existing skills
-    user.skills.clear()
+    # Get current skill IDs to avoid duplicates
+    current_skill_ids = {skill.id for skill in user.skills}
     
-    # Add new skills
+    # Add new skills (skip duplicates)
+    added_count = 0
     for skill_id in skills_data.skill_ids:
-        skill = db.query(Skill).filter(Skill.id == skill_id).first()
-        if skill:
-            user.skills.append(skill)
+        if skill_id not in current_skill_ids:
+            skill = db.query(Skill).filter(Skill.id == skill_id).first()
+            if skill:
+                user.skills.append(skill)
+                added_count += 1
     
     db.commit()
-    db.refresh(user)  # Refresh to get the updated user with skills
+    db.refresh(user)
+    
+    if added_count == 0:
+        raise HTTPException(status_code=400, detail="No new skills added (may already exist)")
+    
+    return user
+
+
+
+@router.delete("/my-skills/remove", response_model=UserSkillsResponse)
+def remove_selected_skills(
+    skills_data: UserSkillsUpdate,
+    db: Session = Depends(get_db),
+    current_username: str = Depends(get_current_user)
+):
+    """Remove specific skills from user's profile"""
+    user = db.query(User).filter(User.username == current_username).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Remove specified skills
+    skills_to_remove = []
+    for skill in user.skills:
+        if skill.id in skills_data.skill_ids:
+            skills_to_remove.append(skill)
+    
+    for skill in skills_to_remove:
+        user.skills.remove(skill)
+    
+    db.commit()
+    db.refresh(user)
+    return user
+
+@router.put("/my-skills/update", response_model=UserSkillsResponse)
+def update_skills_selective(
+    skills_data: UserSkillsUpdate,
+    db: Session = Depends(get_db),
+    current_username: str = Depends(get_current_user)
+):
+    """Update skills - add new ones and remove ones not in the list (like a sync)"""
+    user = db.query(User).filter(User.username == current_username).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Get current skill IDs
+    current_skill_ids = {skill.id for skill in user.skills}
+    new_skill_ids = set(skills_data.skill_ids)
+    
+    # Remove skills that are not in the new list
+    skills_to_remove = []
+    for skill in user.skills:
+        if skill.id not in new_skill_ids:
+            skills_to_remove.append(skill)
+    
+    for skill in skills_to_remove:
+        user.skills.remove(skill)
+    
+    # Add skills that are not in the current list
+    added_count = 0
+    for skill_id in new_skill_ids:
+        if skill_id not in current_skill_ids:
+            skill = db.query(Skill).filter(Skill.id == skill_id).first()
+            if skill:
+                user.skills.append(skill)
+                added_count += 1
+    
+    db.commit()
+    db.refresh(user)
     return user
 
