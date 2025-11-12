@@ -11,11 +11,12 @@ if(not created branch){
 - git branch branch_name
 }
 
+ git checkout branch_name
+ 
 now make changes in your code then apply this
 
 - git add .
 - git commit -m "user manage updated"
-- git checkout branch_name
 - git fetch origin main
 - git merge origin/main
 
