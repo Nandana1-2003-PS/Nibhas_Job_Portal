@@ -6,7 +6,7 @@ class JobPost(Base):
     __tablename__ = "job_posts"
 
     id = Column(Integer, primary_key=True, index=True)
-    title = Column(String, nullable=False)
+    job_title = Column(String, nullable=False)
     description = Column(String, nullable=False)
     salary = Column(String, nullable=True)
     job_type = Column(String, nullable=True)
@@ -16,3 +16,6 @@ class JobPost(Base):
 
     admin_id = Column(Integer, ForeignKey("admins.id"))
     admin = relationship("Admin", back_populates="job_posts")
+
+    # ✅ FIXED: use "job_post" instead of "job"
+    notifications = relationship("Notification", back_populates="job_post", cascade="all, delete")

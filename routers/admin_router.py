@@ -14,6 +14,10 @@ from utils.hashing import verify_password
 from utils.jwt_handler import create_access_token, admin_only
 from schemas.job_post_schema import JobPostCreate,JobPostResponse
 from schemas.skill_schema import SkillBase, SkillCreate
+from sqlalchemy import or_
+from models.skill import Skill
+from models.notification import Notification
+from schemas.notification_schema import NotificationResponse
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
 @router.post("/login")
@@ -102,7 +106,7 @@ def view_all_jobs_detailed(
 ):
     results = db.query(
         EmployerJob.id.label("job_id"),
-        EmployerJob.title,
+        EmployerJob.job_title,
         EmployerJob.description,
         EmployerJob.location,
         EmployerJob.salary,
@@ -129,10 +133,17 @@ def view_all_jobs_detailed(
     return jobs
 
 
-@router.post("/jobs", response_model=JobPostResponse)
-def create_job_post(job: JobPostCreate, db: Session = Depends(get_db), _: str = Depends(admin_only)):
+@router.post("/jobs")
+def create_job_post(
+    job: JobPostCreate,
+    db: Session = Depends(get_db),
+    _: str = Depends(admin_only)
+):
+    """Admin creates a job and gets alerts + notifications if users match"""
+
+    # 1️⃣ Create new job post
     new_job = JobPost(
-        title=job.title,
+        job_title=job.job_title,
         description=job.description,
         salary=job.salary,
         job_type=job.job_type,
@@ -142,7 +153,62 @@ def create_job_post(job: JobPostCreate, db: Session = Depends(get_db), _: str = 
     db.add(new_job)
     db.commit()
     db.refresh(new_job)
-    return new_job
+
+    # 2️⃣ Find matching users (by skill or preferred job)
+    matching_users = (
+        db.query(User)
+        .join(PreferredJob, PreferredJob.user_id == User.id, isouter=True)
+        .join(User.skills, isouter=True)
+        .filter(
+            or_(
+                PreferredJob.job_title.ilike(f"%{job.job_title}%"),
+                Skill.name.ilike(f"%{job.job_title}%"),
+            )
+        )
+        .distinct()
+        .all()
+    )
+
+    # 3️⃣ Create alert + save notification
+    if matching_users:
+        alert_message = f"Found {len(matching_users)} user(s) matching the job '{job.job_title}'."
+        
+        # Create and save notification
+        notification = Notification(
+            message=alert_message,
+            job_id=new_job.id
+        )
+        db.add(notification)
+        db.commit()
+        db.refresh(notification)
+    else:
+        alert_message = f"No users found matching the job '{job.job_title}'."
+        notification = None
+
+    # 4️⃣ Prepare response
+    return {
+        "job_post": {
+            "id": new_job.id,
+            "job_title": new_job.job_title,
+            "description": new_job.description,
+            "salary": new_job.salary,
+            "job_type": new_job.job_type,
+            "vacancies": new_job.vacancies,
+            "location": new_job.location,
+        },
+        "alert": alert_message,
+        "notification_saved": notification is not None,
+    }
+
+
+@router.get("/notifications", response_model=list[NotificationResponse])
+def get_notifications(
+    db: Session = Depends(get_db),
+    _: str = Depends(admin_only)
+):
+    """Fetch all job-related notifications"""
+    notifications = db.query(Notification).order_by(Notification.created_at.desc()).all()
+    return notifications
 
 
 
@@ -158,7 +224,7 @@ def edit_job_post(job_id: int, job_data: JobPostCreate, db: Session = Depends(ge
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
 
-    job.title = job_data.title
+    job.job_title = job_data.job_title 
     job.description = job_data.description
     job.salary = job_data.salary
     job.job_type = job_data.job_type
