@@ -24,7 +24,8 @@ def get_my_skills(
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     
-    user.skills  
+    # Explicitly load the skills relationship
+    user.skills  # This triggers lazy loading
     return user
 
 @router.post("/my-skills/add", response_model=UserSkillsResponse)
@@ -38,6 +39,7 @@ def add_skills(
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     
+    # Get current skill IDs to avoid duplicates
     current_skill_ids = {skill.id for skill in user.skills}
     
     # Add new skills (skip duplicates)
@@ -57,20 +59,7 @@ def add_skills(
     
     return user
 
-@router.put("/my-skills/replace", response_model=UserSkillsResponse)
-def replace_selected_skills(
-    skills_data: UserSkillsUpdate,
-    db: Session = Depends(get_db),
-    current_username: str = Depends(get_current_user)
-):
-    """Replace selected skills with new ones (keep other skills intact)"""
-    user = db.query(User).filter(User.username == current_username).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    
-    
-    
-    raise HTTPException(status_code=501, detail="This endpoint needs custom implementation")
+
 
 @router.delete("/my-skills/remove", response_model=UserSkillsResponse)
 def remove_selected_skills(
@@ -133,27 +122,3 @@ def update_skills_selective(
     db.refresh(user)
     return user
 
-# Keep the original endpoint but rename it to be clear about its behavior
-@router.post("/my-skills/replace-all", response_model=UserSkillsResponse)
-def replace_all_skills(
-    skills_data: UserSkillsUpdate,
-    db: Session = Depends(get_db),
-    current_username: str = Depends(get_current_user)
-):
-    """Replace ALL user skills with new selection (clear existing ones)"""
-    user = db.query(User).filter(User.username == current_username).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    
-    # Clear existing skills
-    user.skills.clear()
-    
-    # Add new skills
-    for skill_id in skills_data.skill_ids:
-        skill = db.query(Skill).filter(Skill.id == skill_id).first()
-        if skill:
-            user.skills.append(skill)
-    
-    db.commit()
-    db.refresh(user)
-    return user
