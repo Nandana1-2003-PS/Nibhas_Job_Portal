@@ -152,7 +152,7 @@ def create_job_post(
 ):
     """Admin creates a job and gets alerts + notifications if users match"""
 
-    # 1️⃣ Create new job post
+    
     new_job = JobPost(
         job_title=job.job_title,
         description=job.description,
@@ -165,7 +165,7 @@ def create_job_post(
     db.commit()
     db.refresh(new_job)
 
-    # 2️⃣ Find matching users (by skill or preferred job)
+    
     matching_users = (
         db.query(User)
         .join(PreferredJob, PreferredJob.user_id == User.id, isouter=True)
@@ -180,11 +180,11 @@ def create_job_post(
         .all()
     )
 
-    # 3️⃣ Create alert + save notification
+   
     if matching_users:
         alert_message = f"Found {len(matching_users)} user(s) matching the job '{job.job_title}'."
         
-        # Create and save notification
+        
         notification = Notification(
             message=alert_message,
             job_id=new_job.id
@@ -196,7 +196,7 @@ def create_job_post(
         alert_message = f"No users found matching the job '{job.job_title}'."
         notification = None
 
-    # 4️⃣ Prepare response
+  
     return {
         "job_post": {
             "id": new_job.id,
@@ -318,20 +318,20 @@ def admin_register_user(
     """
     Admin endpoint to register new users
     """
-    # Check if username already exists
+   
     existing_user = db.query(User).filter(User.username == user_data.username).first()
     if existing_user:
         raise HTTPException(status_code=400, detail="Username already taken")
 
-    # Check if email already exists
+   
     existing_email = db.query(User).filter(User.email == user_data.email).first()
     if existing_email:
         raise HTTPException(status_code=400, detail="Email already used")
 
-    # Hash the password
+ 
     hashed_pwd = hash_password(user_data.password)
 
-    # Create new user
+    
     new_user = User(
         username=user_data.username,
         email=user_data.email,

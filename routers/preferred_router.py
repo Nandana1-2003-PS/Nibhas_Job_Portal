@@ -11,12 +11,12 @@ from utils.jwt_handler import get_current_user
 router = APIRouter(prefix="/preferred-jobs", tags=["Preferred Jobs"])
 
 
-# ---------------------- Create Preferred Job ----------------------
+
 @router.post("/", response_model=PreferredJobResponse, status_code=status.HTTP_201_CREATED)
 def create_preferred_job(
     job: PreferredJobCreate,
     db: Session = Depends(get_db),
-    current_username: str = Depends(get_current_user)  # ✅ Extract username from JWT
+    current_username: str = Depends(get_current_user) 
 ):
     user = db.query(User).filter(User.username == current_username).first()
     if not user:
@@ -29,7 +29,7 @@ def create_preferred_job(
     return new_job
 
 
-# ---------------------- Get Preferred Jobs (for logged-in user) ----------------------
+
 @router.get("/me", response_model=List[PreferredJobResponse])
 def get_my_preferred_jobs(
     db: Session = Depends(get_db),
@@ -46,7 +46,7 @@ def get_my_preferred_jobs(
     return jobs
 
 
-# ---------------------- Update Preferred Job ----------------------
+
 @router.put("/{job_id}", response_model=PreferredJobResponse)
 def update_preferred_job(
     job_id: int,
@@ -74,7 +74,7 @@ def update_preferred_job(
     return job
 
 
-# ---------------------- Delete Preferred Job ----------------------
+
 @router.delete("/{job_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_preferred_job(
     job_id: int,
