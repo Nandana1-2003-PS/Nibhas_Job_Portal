@@ -9,6 +9,8 @@ from models.admin import Admin
 from models.employer import Employer
 from models.job_post import JobPost
 from models.employer_job import EmployerJob
+from models.skill import Skill
+from models.user_skill import user_skill
 from schemas.job_post_schema import JobPostResponse,JobPostCreate
 from utils.hashing import verify_password, hash_password
 from utils.jwt_handler import create_access_token, admin_only
@@ -84,11 +86,21 @@ def view_user_profile(
 
     preferred_job = db.query(PreferredJob).filter(
         PreferredJob.user_id == user_id).first()
+    
+    user_skills = (
+        db.query(Skill)
+        .join(user_skill, Skill.id == user_skill.c.skill_id)
+        .filter(user_skill.c.user_id == user_id)
+        .all()
+    )
+
+
 
     return {
         "personal_details": personal_details,
         "education_details": education,
-        "preferred_job": preferred_job
+        "preferred_job": preferred_job,
+        "skills":user_skills
     }
 
 @router.delete("/delete-user/{user_id}")

@@ -20,9 +20,9 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     """Upgrade schema."""
-    op.add_column('employer_jobs',sa.Column('vaccany',sa.Integer(),nullable=True))
+    op.add_column('employer_jobs',sa.Column('vacancy',sa.Integer(),nullable=True))
 
 
 def downgrade() -> None:
     """Downgrade schema."""
-    op.drop_column('employer_jobs','vaccancy')
+    op.drop_column('employer_jobs','vacancy')
