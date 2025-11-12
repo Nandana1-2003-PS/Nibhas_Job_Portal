@@ -8,6 +8,11 @@ from utils.jwt_handler import create_access_token, get_current_user
 from models.job_post import JobPost
 from schemas.job_post_schema import JobPostResponse
 from typing import List
+from models.personal_details import PersonalDetails
+from models.education import EducationDetails
+from models.preferred_job import PreferredJob
+from models.skill import Skill
+from models.user_skill import user_skill
 
 
 router = APIRouter(prefix="/users", tags=["Users"])
@@ -42,13 +47,52 @@ def login_user(user: UserLogin, db: Session = Depends(get_db)):
     token = create_access_token({"sub": db_user.username, "role": "user"})
     return {"access_token": token, "token_type": "bearer"}
 
-@router.get("/me", response_model=UserResponse)
+@router.get("/me")
 def get_current_user_profile(
     db: Session = Depends(get_db),
     current_username: str = Depends(get_current_user)
 ):
+    # Fetch the logged-in user
     user = db.query(User).filter(User.username == current_username).first()
-    return user
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # Fetch related data
+    personal_details = db.query(PersonalDetails).filter(
+        PersonalDetails.user_id == user.id
+    ).first()
+
+    education_details = db.query(EducationDetails).filter(
+        EducationDetails.user_id == user.id
+    ).all()
+
+    preferred_job = db.query(PreferredJob).filter(
+        PreferredJob.user_id == user.id
+    ).first()
+
+    # Fetch skills through association table
+    user_skills = (
+        db.query(Skill)
+        .join(user_skill, Skill.id == user_skill.c.skill_id)
+        .filter(user_skill.c.user_id == user.id)
+        .all()
+    )
+
+    # Optional: return just skill names
+    skill_list = [skill.name for skill in user_skills]
+
+    return {
+        "user": {
+            "id": user.id,
+            "username": user.username,
+            "email": user.email,
+        },
+        "personal_details": personal_details,
+        "education_details": education_details,
+        "preferred_job": preferred_job,
+        "skills": skill_list,
+    }
+
 
 
 @router.get("/jobs", response_model=List[JobPostResponse])

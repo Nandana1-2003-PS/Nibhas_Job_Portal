@@ -12,6 +12,7 @@ class PreferredJob(Base):
     salary_expectation = Column(String)
     job_type = Column(String)
     user_id = Column(Integer, ForeignKey("users.id"))
+    
 
 
 
