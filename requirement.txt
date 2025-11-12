@@ -1,0 +1,10 @@
+fastapi==
+uvicorn==
+sqlalchemy==
+alembic==
+python-jose==
+passlib==
+python-multipart==
+pydantic==
+pydantic-settings==
+psycopg2-binary==
