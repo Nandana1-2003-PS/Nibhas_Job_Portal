@@ -52,12 +52,12 @@ def get_current_user_profile(
     db: Session = Depends(get_db),
     current_username: str = Depends(get_current_user)
 ):
-    # Fetch the logged-in user
+  
     user = db.query(User).filter(User.username == current_username).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    # Fetch related data
+  
     personal_details = db.query(PersonalDetails).filter(
         PersonalDetails.user_id == user.id
     ).first()
@@ -70,7 +70,7 @@ def get_current_user_profile(
         PreferredJob.user_id == user.id
     ).first()
 
-    # Fetch skills through association table
+   
     user_skills = (
         db.query(Skill)
         .join(user_skill, Skill.id == user_skill.c.skill_id)
@@ -78,7 +78,7 @@ def get_current_user_profile(
         .all()
     )
 
-    # Optional: return just skill names
+    
     skill_list = [skill.name for skill in user_skills]
 
     return {

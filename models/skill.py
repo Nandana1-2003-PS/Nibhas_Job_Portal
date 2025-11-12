@@ -1,4 +1,3 @@
-# models/skill.py
 from sqlalchemy import Column, Integer, String, Table, ForeignKey
 from sqlalchemy.orm import relationship
 from database import Base
