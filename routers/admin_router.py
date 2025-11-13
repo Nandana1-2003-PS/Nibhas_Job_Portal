@@ -16,8 +16,10 @@ from utils.hashing import verify_password, hash_password
 from utils.jwt_handler import create_access_token, admin_only
 from schemas.job_post_schema import JobPostCreate,JobPostResponse
 from schemas.skill_schema import SkillBase, SkillCreate
+from models.notification import Notification
+from schemas.notification_schema import NotificationResponse    
 from schemas.user_schema import AdminUserCreate, UserResponse
-
+from sqlalchemy import or_
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
 @router.post("/login")
@@ -29,7 +31,6 @@ def admin_login(username: str, password: str, db: Session = Depends(get_db)):
 
     token = create_access_token({"sub": admin.username, "role": "admin"})
     return {"access_token": token, "token_type": "bearer"}
-
 
 
 @router.get("/view-jobseekers")
@@ -116,7 +117,7 @@ def view_all_jobs_detailed(
 ):
     results = db.query(
         EmployerJob.id.label("job_id"),
-        EmployerJob.title,
+        EmployerJob.job_title,
         EmployerJob.description,
         EmployerJob.location,
         EmployerJob.salary,
@@ -143,10 +144,17 @@ def view_all_jobs_detailed(
     return jobs
 
 
-@router.post("/jobs", response_model=JobPostResponse)
-def create_job_post(job: JobPostCreate, db: Session = Depends(get_db), _: str = Depends(admin_only)):
+@router.post("/jobs")
+def create_job_post(
+    job: JobPostCreate,
+    db: Session = Depends(get_db),
+    _: str = Depends(admin_only)
+):
+    """Admin creates a job and gets alerts + notifications if users match"""
+
+    
     new_job = JobPost(
-        title=job.title,
+        job_title=job.job_title,
         description=job.description,
         salary=job.salary,
         job_type=job.job_type,
@@ -156,7 +164,62 @@ def create_job_post(job: JobPostCreate, db: Session = Depends(get_db), _: str = 
     db.add(new_job)
     db.commit()
     db.refresh(new_job)
-    return new_job
+
+    
+    matching_users = (
+        db.query(User)
+        .join(PreferredJob, PreferredJob.user_id == User.id, isouter=True)
+        .join(User.skills, isouter=True)
+        .filter(
+            or_(
+                PreferredJob.job_title.ilike(f"%{job.job_title}%"),
+                Skill.name.ilike(f"%{job.job_title}%"),
+            )
+        )
+        .distinct()
+        .all()
+    )
+
+   
+    if matching_users:
+        alert_message = f"Found {len(matching_users)} user(s) matching the job '{job.job_title}'."
+        
+        
+        notification = Notification(
+            message=alert_message,
+            job_id=new_job.id
+        )
+        db.add(notification)
+        db.commit()
+        db.refresh(notification)
+    else:
+        alert_message = f"No users found matching the job '{job.job_title}'."
+        notification = None
+
+  
+    return {
+        "job_post": {
+            "id": new_job.id,
+            "job_title": new_job.job_title,
+            "description": new_job.description,
+            "salary": new_job.salary,
+            "job_type": new_job.job_type,
+            "vacancies": new_job.vacancies,
+            "location": new_job.location,
+        },
+        "alert": alert_message,
+        "notification_saved": notification is not None,
+    }
+
+
+@router.get("/notifications", response_model=list[NotificationResponse])
+def get_notifications(
+    db: Session = Depends(get_db),
+    _: str = Depends(admin_only)
+):
+    """Fetch all job-related notifications"""
+    notifications = db.query(Notification).order_by(Notification.created_at.desc()).all()
+    return notifications
 
 
 
@@ -172,7 +235,7 @@ def edit_job_post(job_id: int, job_data: JobPostCreate, db: Session = Depends(ge
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
 
-    job.title = job_data.title
+    job.job_title = job_data.job_title 
     job.description = job_data.description
     job.salary = job_data.salary
     job.job_type = job_data.job_type
@@ -244,3 +307,39 @@ def delete_skill(
     db.delete(skill)
     db.commit()
     return {"message": "Skill deleted successfully"}
+
+
+@router.post("/register-user", response_model=UserResponse)
+def admin_register_user(
+    user_data: AdminUserCreate,
+    db: Session = Depends(get_db),
+    _: str = Depends(admin_only)
+):
+    """
+    Admin endpoint to register new users
+    """
+   
+    existing_user = db.query(User).filter(User.username == user_data.username).first()
+    if existing_user:
+        raise HTTPException(status_code=400, detail="Username already taken")
+
+   
+    existing_email = db.query(User).filter(User.email == user_data.email).first()
+    if existing_email:
+        raise HTTPException(status_code=400, detail="Email already used")
+
+ 
+    hashed_pwd = hash_password(user_data.password)
+
+    
+    new_user = User(
+        username=user_data.username,
+        email=user_data.email,
+        hashed_password=hashed_pwd
+    )
+    
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+    
+    return new_user

@@ -48,8 +48,53 @@ def login_user(user: UserLogin, db: Session = Depends(get_db)):
     return {"access_token": token, "token_type": "bearer"}
 
 
-
 @router.get("/jobs", response_model=List[JobPostResponse])
-def view_jobs(db: Session = Depends(get_db)):
+def view_jobs(db: Session = Depends(get_db),current_username: str = Depends(get_current_user)):
     jobs = db.query(JobPost).order_by(JobPost.created_at.desc()).all()
     return jobs
+
+@router.get("/me")
+def get_current_user_profile(
+    db: Session = Depends(get_db),
+    current_username: str = Depends(get_current_user)
+):
+  
+    user = db.query(User).filter(User.username == current_username).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+  
+    personal_details = db.query(PersonalDetails).filter(
+        PersonalDetails.user_id == user.id
+    ).first()
+
+    education_details = db.query(EducationDetails).filter(
+        EducationDetails.user_id == user.id
+    ).all()
+
+    preferred_job = db.query(PreferredJob).filter(
+        PreferredJob.user_id == user.id
+    ).first()
+
+   
+    user_skills = (
+        db.query(Skill)
+        .join(user_skill, Skill.id == user_skill.c.skill_id)
+        .filter(user_skill.c.user_id == user.id)
+        .all()
+    )
+
+    
+    skill_list = [skill.name for skill in user_skills]
+
+    return {
+        "user": {
+            "id": user.id,
+            "username": user.username,
+            "email": user.email,
+        },
+        "personal_details": personal_details,
+        "education_details": education_details,
+        "preferred_job": preferred_job,
+        "skills": skill_list,
+    }

@@ -2,22 +2,15 @@ from pydantic import BaseModel
 from datetime import datetime
 
 class JobPostCreate(BaseModel):
-    title: str
+    job_title: str
     description: str
     salary: str | None = None
     job_type: str | None = None
     vacancies: int | None = None
     location: str | None = None
 
-
-class JobPostResponse(BaseModel):
+class JobPostResponse(JobPostCreate):
     id: int
-    title: str
-    description: str
-    salary: str | None = None
-    job_type: str | None = None
-    vacancies: int | None = None
-    location: str | None = None
     created_at: datetime
 
     class Config:
