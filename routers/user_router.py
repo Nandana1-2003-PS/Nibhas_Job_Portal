@@ -47,6 +47,12 @@ def login_user(user: UserLogin, db: Session = Depends(get_db)):
     token = create_access_token({"sub": db_user.username, "role": "user"})
     return {"access_token": token, "token_type": "bearer"}
 
+
+@router.get("/jobs", response_model=List[JobPostResponse])
+def view_jobs(db: Session = Depends(get_db),current_username: str = Depends(get_current_user)):
+    jobs = db.query(JobPost).order_by(JobPost.created_at.desc()).all()
+    return jobs
+
 @router.get("/me")
 def get_current_user_profile(
     db: Session = Depends(get_db),
@@ -92,10 +98,3 @@ def get_current_user_profile(
         "preferred_job": preferred_job,
         "skills": skill_list,
     }
-
-
-
-@router.get("/jobs", response_model=List[JobPostResponse])
-def view_jobs(db: Session = Depends(get_db)):
-    jobs = db.query(JobPost).order_by(JobPost.created_at.desc()).all()
-    return jobs
