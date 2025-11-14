@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from database import get_db
 from models.user import User
-from schemas.user_schema import UserCreate, UserLogin, UserResponse
+from schemas.user_schema import UserCreate, UserLogin, UserResponse,UserProfileResponse
 from utils.hashing import hash_password, verify_password
 from utils.jwt_handler import create_access_token, get_current_user
 from models.job_post import JobPost
@@ -47,7 +47,13 @@ def login_user(user: UserLogin, db: Session = Depends(get_db)):
     token = create_access_token({"sub": db_user.username, "role": "user"})
     return {"access_token": token, "token_type": "bearer"}
 
-@router.get("/me")
+
+@router.get("/jobs", response_model=List[JobPostResponse])
+def view_jobs(db: Session = Depends(get_db),current_username: str = Depends(get_current_user)):
+    jobs = db.query(JobPost).order_by(JobPost.created_at.desc()).all()
+    return jobs
+
+@router.get("/me",response_model=UserProfileResponse)
 def get_current_user_profile(
     db: Session = Depends(get_db),
     current_username: str = Depends(get_current_user)
@@ -82,20 +88,11 @@ def get_current_user_profile(
     skill_list = [skill.name for skill in user_skills]
 
     return {
-        "user": {
             "id": user.id,
             "username": user.username,
             "email": user.email,
-        },
         "personal_details": personal_details,
-        "education_details": education_details,
-        "preferred_job": preferred_job,
+        "education": education_details,
+        "preferred_jobs": preferred_job,
         "skills": skill_list,
     }
-
-
-
-@router.get("/jobs", response_model=List[JobPostResponse])
-def view_jobs(db: Session = Depends(get_db)):
-    jobs = db.query(JobPost).order_by(JobPost.created_at.desc()).all()
-    return jobs

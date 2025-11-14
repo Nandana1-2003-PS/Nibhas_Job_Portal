@@ -11,6 +11,7 @@ from schemas.personal_details_schema import (
 from utils.jwt_handler import get_current_user
 
 router = APIRouter(prefix="/personal-details", tags=["Personal Details"])
+
 @router.post("/", response_model=PersonalDetailsResponse)
 def create_personal_details(
     details: PersonalDetailsCreate,
