@@ -10,6 +10,5 @@ class Notification(Base):
     message = Column(String, nullable=False)
     job_id = Column(Integer, ForeignKey("job_posts.id"))  
     created_at = Column(DateTime, default=datetime.utcnow)
-    user_id = Column(Integer, ForeignKey("users.id"))
+
     job_post = relationship("JobPost", back_populates="notifications")
-    user = relationship("User", back_populates="notifications")
