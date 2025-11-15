@@ -7,9 +7,9 @@ class EducationDetails(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"))
-    qualification = Column(String)
-    institution = Column(String)
-    year_of_passing = Column(String)
+    qualification = Column(String(200))
+    institution = Column(String(200))
+    year_of_passing = Column(String(10))
 
     
     user = relationship("User", back_populates="educations")

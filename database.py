@@ -2,9 +2,13 @@ from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
-DATABASE_URL = "sqlite:///./jobportal.db"
+MYSQL_URL = (
+    "mysql+pymysql://hrd_user:"
+    "Nb%40ab10f222f4d824a27e76ac4aff8978d70f631cfce552c5c80ee04903d2db1f07"
+    "@69.62.81.188:3306/hrd"
+)
 
-engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+engine = create_engine(MYSQL_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
@@ -14,3 +18,4 @@ def get_db():
         yield db
     finally:
         db.close()
+

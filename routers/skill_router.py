@@ -23,8 +23,8 @@ def get_my_skills(
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     
-    # Explicitly load the skills relationship
-    user.skills  # This triggers lazy loading
+
+    user.skills  
     return user
 
 @router.post("/my-skills/add", response_model=UserSkillsResponse)
@@ -38,10 +38,10 @@ def add_skills(
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     
-    # Get current skill IDs to avoid duplicates
+    
     current_skill_ids = {skill.id for skill in user.skills}
     
-    # Add new skills (skip duplicates)
+    
     added_count = 0
     for skill_id in skills_data.skill_ids:
         if skill_id not in current_skill_ids:
@@ -71,7 +71,7 @@ def remove_selected_skills(
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     
-    # Remove specified skills
+    
     skills_to_remove = []
     for skill in user.skills:
         if skill.id in skills_data.skill_ids:
@@ -95,11 +95,11 @@ def update_skills_selective(
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     
-    # Get current skill IDs
+    
     current_skill_ids = {skill.id for skill in user.skills}
     new_skill_ids = set(skills_data.skill_ids)
     
-    # Remove skills that are not in the new list
+    
     skills_to_remove = []
     for skill in user.skills:
         if skill.id not in new_skill_ids:
@@ -108,7 +108,7 @@ def update_skills_selective(
     for skill in skills_to_remove:
         user.skills.remove(skill)
     
-    # Add skills that are not in the current list
+    
     added_count = 0
     for skill_id in new_skill_ids:
         if skill_id not in current_skill_ids:
