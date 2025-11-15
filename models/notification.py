@@ -7,7 +7,7 @@ class Notification(Base):
     __tablename__ = "notifications"
     
     id = Column(Integer, primary_key=True, index=True)
-    message = Column(String, nullable=False)
+    message = Column(String(1000), nullable=False)
     job_id = Column(Integer, ForeignKey("job_posts.id"))  
     created_at = Column(DateTime, default=datetime.utcnow)
 

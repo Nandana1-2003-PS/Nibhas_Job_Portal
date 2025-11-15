@@ -6,6 +6,6 @@ class Skill(Base):
     __tablename__ = "skills"
 
     id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, unique=True, nullable=False)
+    name = Column(String(200), unique=True, nullable=False)
 
     users = relationship("User", secondary="user_skill", back_populates="skills")
