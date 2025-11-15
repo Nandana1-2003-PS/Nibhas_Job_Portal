@@ -150,7 +150,7 @@ def create_job_post(
     db: Session = Depends(get_db),
     _: str = Depends(admin_only)
 ):
-    """Admin creates a job and gets alerts + notifications if users match"""
+    """Admin creates a job + send notifications to matching users"""
 
     
     new_job = JobPost(
@@ -161,11 +161,12 @@ def create_job_post(
         vacancies=job.vacancies,
         location=job.location
     )
+
     db.add(new_job)
     db.commit()
     db.refresh(new_job)
 
-    
+  
     matching_users = (
         db.query(User)
         .join(PreferredJob, PreferredJob.user_id == User.id, isouter=True)
@@ -180,23 +181,23 @@ def create_job_post(
         .all()
     )
 
-   
-    if matching_users:
-        alert_message = f"Found {len(matching_users)} user(s) matching the job '{job.job_title}'."
-        
-        
+    user_ids = [user.id for user in matching_users]
+    for user in matching_users:
         notification = Notification(
-            message=alert_message,
+            message=f"New job posted: {job.job_title}",
+            user_id=user.id,
             job_id=new_job.id
         )
         db.add(notification)
-        db.commit()
-        db.refresh(notification)
-    else:
-        alert_message = f"No users found matching the job '{job.job_title}'."
-        notification = None
 
-  
+    db.commit()
+
+    alert_message = (
+        f"Notifications sent to {len(user_ids)} user(s)"
+        if user_ids else
+        "No matching users found"
+    )
+
     return {
         "job_post": {
             "id": new_job.id,
@@ -207,8 +208,8 @@ def create_job_post(
             "vacancies": new_job.vacancies,
             "location": new_job.location,
         },
-        "alert": alert_message,
-        "notification_saved": notification is not None,
+        "matching_user_ids": user_ids,
+        "alert": alert_message
     }
 
 

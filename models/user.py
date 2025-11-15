@@ -15,3 +15,5 @@ class User(Base):
 
     educations = relationship("EducationDetails", back_populates="user")
     skills = relationship("Skill", secondary=user_skill, back_populates="users")
+    preferred_jobs = relationship("PreferredJob", back_populates="user")
+    notifications = relationship("Notification", back_populates="user")

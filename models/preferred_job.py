@@ -13,4 +13,4 @@ class PreferredJob(Base):
     job_type = Column(String(200))
     user_id = Column(Integer, ForeignKey("users.id"))
     
-    
+    user = relationship("User", back_populates="preferred_jobs")  
