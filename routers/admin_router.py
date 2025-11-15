@@ -143,7 +143,6 @@ def view_all_jobs_detailed(
 
     return jobs
 
-
 @router.post("/jobs")
 def create_job_post(
     job: JobPostCreate,
@@ -221,8 +220,6 @@ def get_notifications(
     """Fetch all job-related notifications"""
     notifications = db.query(Notification).order_by(Notification.created_at.desc()).all()
     return notifications
-
-
 
 @router.get("/jobs", response_model=list[JobPostResponse])
 def view_all_jobs(db: Session = Depends(get_db), _: str = Depends(admin_only)):

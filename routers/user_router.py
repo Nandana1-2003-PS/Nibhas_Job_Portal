@@ -13,6 +13,8 @@ from models.education import EducationDetails
 from models.preferred_job import PreferredJob
 from models.skill import Skill
 from models.user_skill import user_skill
+from models.notification import Notification
+from schemas.notification_schema import NotificationResponse
 
 
 router = APIRouter(prefix="/users", tags=["Users"])
@@ -96,3 +98,4 @@ def get_current_user_profile(
         "preferred_jobs": preferred_job,
         "skills": skill_list,
     }
+
