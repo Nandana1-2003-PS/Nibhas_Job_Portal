@@ -3,6 +3,7 @@ from sqlalchemy.orm import relationship
 from database import Base
 from datetime import datetime
 
+
 class Notification(Base):
     __tablename__ = "notifications"
     
@@ -13,6 +14,6 @@ class Notification(Base):
     job_id = Column(Integer, ForeignKey("job_posts.id"))
     created_at = Column(DateTime, default=datetime.utcnow)
 
-
     user = relationship("User", back_populates="notifications")
     job_post = relationship("JobPost", back_populates="notifications")
+    
