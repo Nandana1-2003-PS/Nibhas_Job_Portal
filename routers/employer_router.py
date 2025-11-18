@@ -88,10 +88,11 @@ def post_job(
     employer = db.query(Employer).filter(Employer.username == username).first()
 
     new_job = EmployerJob(
-        title=job.title,
+        job_title=job.job_title,
         description=job.description,
         location=job.location,
         salary=job.salary,
+        vaccancy=job.vaccancy,
         job_type=job.job_type,
         employer_id=employer.id
     )
@@ -101,6 +102,20 @@ def post_job(
     db.refresh(new_job)
 
     return new_job
+
+@router.get("/jobs", response_model=list[EmployerJobResponse])
+def get_my_jobs(
+    username: str = Depends(employer_only),
+    db: Session = Depends(get_db)
+):
+    employer = db.query(Employer).filter(Employer.username == username).first()
+
+    if not employer:
+        raise HTTPException(status_code=404, detail="Employer not found")
+
+    jobs = db.query(EmployerJob).filter(EmployerJob.employer_id == employer.id).all()
+
+    return jobs
 
 @router.put("/jobs/update/{job_id}", response_model=EmployerJobResponse)
 def update_job(
@@ -119,8 +134,8 @@ def update_job(
     if not db_job:
         raise HTTPException(status_code=404, detail="Job post not found")
 
-    if job.title:
-        db_job.title = job.title
+    if job.job_title:
+        db_job.job_title = job.job_title
 
     if job.description:
         db_job.description = job.description
@@ -130,6 +145,9 @@ def update_job(
 
     if job.salary:
         db_job.salary = job.salary
+        
+    if job.vaccancy:
+        db_job.vaccancy = job.vaccancy
 
     if job.job_type:
         db_job.job_type = job.job_type
