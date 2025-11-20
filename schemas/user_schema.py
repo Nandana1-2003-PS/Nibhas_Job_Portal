@@ -33,7 +33,7 @@ class UserProfileResponse(BaseModel):
     personal_details: Optional[PersonalDetailsResponse] = None
     education: List[EducationResponse] = []
     preferred_jobs: Optional[PreferredJobResponse] = None
-    skills: List[SkillBase] = []
+    skills: List[str] = []
 
     class Config:
         from_attributes = True
@@ -47,7 +47,7 @@ class AdminUserCreate(BaseModel):
     personal_details: PersonalDetailsCreate
     education: EducationCreate
     preferred_jobs: PreferredJobCreate
-    skills: SkillCreate
+    skill_ids: List[int] = [] 
 
     class Config:
         from_attributes = True
