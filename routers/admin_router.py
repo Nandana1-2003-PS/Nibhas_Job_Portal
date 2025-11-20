@@ -347,4 +347,14 @@ def admin_register_user(
     db.commit()
     db.refresh(new_user)
     
+
+    if user_data.skill_ids:
+        for skill_id in user_data.skill_ids:
+            skill = db.query(Skill).filter(Skill.id == skill_id).first()
+            if skill:
+                new_user.skills.append(skill)
+    
+    db.commit()
+    db.refresh(new_user)
+    
     return new_user
