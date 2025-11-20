@@ -112,27 +112,33 @@ from models.employer import Employer
 
 @router.get("/view-all-jobs-detailed")
 def view_all_jobs_detailed(
+    employer_id: int | None = None,        
     db: Session = Depends(get_db),
     _: str = Depends(admin_only)
 ):
-    results = db.query(
+    query = db.query(
         EmployerJob.id.label("job_id"),
         EmployerJob.job_title,
         EmployerJob.description,
         EmployerJob.location,
-        EmployerJob.salary,
+        EmployerJob.salary, 
         EmployerJob.job_type,
         Employer.id.label("employer_id"),
         Employer.company_name
     ).join(
         Employer, EmployerJob.employer_id == Employer.id
-    ).all()
+    )
+
+    if employer_id is not None:
+        query = query.filter(EmployerJob.employer_id == employer_id)
+
+    results = query.all()
 
     jobs = []
     for r in results:
         jobs.append({
             "job_id": r.job_id,
-            "title": r.title,
+            "title": r.job_title,
             "description": r.description,
             "location": r.location,
             "salary": r.salary,
@@ -142,6 +148,7 @@ def view_all_jobs_detailed(
         })
 
     return jobs
+
 
 @router.post("/jobs")
 def create_job_post(
