@@ -99,3 +99,41 @@ def get_current_user_profile(
         "skills": skill_list,
     }
 
+@router.post("/apply-job/{job_id}")
+def apply_for_job(
+    job_id: int,
+    db: Session = Depends(get_db),
+    current_username: str = Depends(get_current_user)
+):
+    # Fetch user
+    user = db.query(User).filter(User.username == current_username).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # Check if job exists
+    job = db.query(JobPost).filter(JobPost.id == job_id).first()
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    # Check if user already applied (avoid spam)
+    existing = db.query(Notification).filter(
+        Notification.user_id == user.id,
+        Notification.job_id == job_id,
+        Notification.message.ilike("%applied%")
+    ).first()
+
+    if existing:
+        raise HTTPException(status_code=400, detail="You already applied for this job")
+
+    # Create notification for admin
+    new_notification = Notification(
+        message=f"{user.username} applied for the job '{job.job_title}'",
+        user_id=user.id,
+        job_id=job_id
+    )
+
+    db.add(new_notification)
+    db.commit()
+    db.refresh(new_notification)
+
+    return {"message": "Application submitted successfully"}

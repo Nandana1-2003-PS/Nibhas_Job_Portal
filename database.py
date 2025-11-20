@@ -5,7 +5,7 @@ from sqlalchemy.orm import sessionmaker
 MYSQL_URL = (
     "mysql+pymysql://hrd_user:"
     "Nb%40ab10f222f4d824a27e76ac4aff8978d70f631cfce552c5c80ee04903d2db1f07"
-    "@69.62.81.188:3306/hrd"
+    "@72.61.174.26:3306/hrd"
 )
 
 engine = create_engine(MYSQL_URL)
